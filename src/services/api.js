@@ -1,7 +1,17 @@
 import axios from 'axios';
 
+// Resolve dynamic API URL from environment variable VITE_API_BASE_URL, defaulting to '/api' for local dev proxy
+const getBaseURL = () => {
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
+  if (!envUrl) return '/api';
+  const cleaned = envUrl.replace(/\/+$/, '');
+  return cleaned.endsWith('/api') ? cleaned : `${cleaned}/api`;
+};
+
+const baseURL = getBaseURL();
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL,
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
@@ -81,7 +91,7 @@ api.interceptors.response.use(
       try {
         const storedRefreshToken = getStoredRefreshToken();
         const refreshRes = await axios.post(
-          '/api/auth/refresh',
+          `${baseURL}/auth/refresh`,
           { refreshToken: storedRefreshToken },
           { withCredentials: true }
         );
@@ -191,6 +201,13 @@ export const adminService = {
 
   getCustomers: async () => {
     const res = await api.get('/admin/customers');
+    return res.data;
+  },
+};
+
+export const contactService = {
+  getInquiries: async () => {
+    const res = await api.get('/contact');
     return res.data;
   },
 };

@@ -161,7 +161,10 @@ export default function OrdersPage() {
                       <img
                         src={item.thumbnail || item.images?.[0] || 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=100'}
                         alt={item.title}
-                        className="w-10 h-10 object-cover rounded-lg border border-slate-200"
+                        onError={(e) => {
+                          e.currentTarget.src = 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=100';
+                        }}
+                        className="w-10 h-10 object-cover rounded-lg border border-slate-200 bg-slate-100"
                       />
                       <div>
                         <div className="font-semibold text-slate-800 line-clamp-1">{item.title}</div>
@@ -178,6 +181,37 @@ export default function OrdersPage() {
               </div>
             </div>
 
+            <div className="grid grid-cols-2 gap-3 p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+              <div>
+                <span className="text-slate-400 block text-[11px]">Payment Method</span>
+                <span className="font-semibold text-slate-800">{selectedOrder.paymentMethod || 'COD'}</span>
+                <span className="text-slate-500 block text-[11px]">
+                  Ref: <strong className="font-mono">{selectedOrder.paymentReference || 'N/A'}</strong>
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[11px]">Payment Status</span>
+                <span className={`inline-block px-2 py-0.5 rounded-full font-semibold text-[11px] ${
+                  selectedOrder.paymentStatus === 'Paid'
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : selectedOrder.paymentStatus?.includes('Verification')
+                    ? 'bg-amber-100 text-amber-800'
+                    : 'bg-slate-200 text-slate-700'
+                }`}>
+                  {selectedOrder.paymentStatus || 'Pending'}
+                </span>
+                <span className="text-slate-400 block text-[11px] mt-0.5">
+                  {selectedOrder.deliveryMethod || 'Standard Delivery'}
+                </span>
+              </div>
+            </div>
+
+            {selectedOrder.customer?.notes && (
+              <div className="p-2.5 rounded-lg bg-amber-50/60 border border-amber-200/60 text-[11px] text-amber-900">
+                <strong>Delivery Notes:</strong> {selectedOrder.customer.notes}
+              </div>
+            )}
+
             <div className="flex items-center justify-between pt-3 border-t border-slate-200">
               <span className="font-bold text-slate-800">Grand Total:</span>
               <span className="text-base font-bold text-emerald-700">
@@ -185,26 +219,49 @@ export default function OrdersPage() {
               </span>
             </div>
 
-            <div className="pt-2">
-              <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                Fulfillment Status (Live MongoDB Atlas)
-              </label>
-              <select
-                value={selectedOrder.status}
-                onChange={async (e) => {
-                  const newStatus = e.target.value;
-                  const targetId = selectedOrder._id || selectedOrder.id;
-                  await updateOrderStatus(targetId, newStatus);
-                  setSelectedOrder({ ...selectedOrder, status: newStatus });
-                }}
-                className="input-field text-xs"
-              >
-                <option value="Pending">Pending</option>
-                <option value="Processing">Processing</option>
-                <option value="Shipped">Shipped</option>
-                <option value="Delivered">Delivered</option>
-                <option value="Cancelled">Cancelled</option>
-              </select>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                  Fulfillment Status
+                </label>
+                <select
+                  value={selectedOrder.status}
+                  onChange={async (e) => {
+                    const newStatus = e.target.value;
+                    const targetId = selectedOrder._id || selectedOrder.id;
+                    const res = await updateOrderStatus(targetId, { status: newStatus });
+                    if (res) setSelectedOrder({ ...selectedOrder, status: newStatus, paymentStatus: res.paymentStatus || selectedOrder.paymentStatus });
+                  }}
+                  className="input-field text-xs"
+                >
+                  <option value="Pending">Pending</option>
+                  <option value="Processing">Processing</option>
+                  <option value="Shipped">Shipped</option>
+                  <option value="Delivered">Delivered</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                  Payment Verification Status
+                </label>
+                <select
+                  value={selectedOrder.paymentStatus || 'Pending (COD)'}
+                  onChange={async (e) => {
+                    const newPayStatus = e.target.value;
+                    const targetId = selectedOrder._id || selectedOrder.id;
+                    await updateOrderStatus(targetId, { paymentStatus: newPayStatus });
+                    setSelectedOrder({ ...selectedOrder, paymentStatus: newPayStatus });
+                  }}
+                  className="input-field text-xs"
+                >
+                  <option value="Pending (COD)">Pending (COD)</option>
+                  <option value="Pending Verification">Pending Verification</option>
+                  <option value="Paid">Paid (Verified)</option>
+                  <option value="Failed">Failed</option>
+                </select>
+              </div>
             </div>
           </div>
         )}

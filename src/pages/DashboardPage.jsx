@@ -73,28 +73,28 @@ export default function DashboardPage() {
           value={`$${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
           icon={DollarSign}
           color="emerald"
-          trend="+12.5%"
+          trend="Realized Revenue"
         />
         <StatCard
           title="Total Orders"
           value={totalOrders}
           icon={ShoppingBag}
           color="blue"
-          trend="+8.2%"
+          trend={`${processingCount} in pipeline`}
         />
         <StatCard
           title="Active Products"
           value={totalProducts}
           icon={Package}
           color="amber"
-          trend="In Stock"
+          trend={`${stats?.totalStock ?? 'Live'} stock units`}
         />
         <StatCard
           title="Customers Directory"
           value={totalCustomers}
           icon={Users}
           color="purple"
-          trend="+5.4%"
+          trend="Verified Accounts"
         />
       </div>
 
@@ -226,7 +226,10 @@ export default function DashboardPage() {
                       <img
                         src={item.thumbnail || item.images?.[0] || 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=100'}
                         alt={item.title}
-                        className="w-10 h-10 object-cover rounded-lg border border-slate-200"
+                        onError={(e) => {
+                          e.currentTarget.src = 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=100';
+                        }}
+                        className="w-10 h-10 object-cover rounded-lg border border-slate-200 bg-slate-100"
                       />
                       <div>
                         <div className="font-semibold text-slate-800">{item.title}</div>

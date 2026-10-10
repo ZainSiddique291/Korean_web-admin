@@ -97,7 +97,7 @@ export default function LoginPage() {
 
         <div className="mt-6 pt-5 border-t border-slate-100 text-center">
           <a
-            href="http://localhost:5173"
+            href={import.meta.env.VITE_CLIENT_URL || 'http://localhost:5173'}
             target="_blank"
             rel="noopener noreferrer"
             className="text-xs font-medium text-primary-700 hover:text-primary-800 hover:underline"

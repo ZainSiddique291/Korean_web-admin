@@ -12,6 +12,7 @@ export default function ProductsPage() {
   // Modals
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [deletingProduct, setDeletingProduct] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
   // Form State
@@ -76,10 +77,19 @@ export default function ProductsPage() {
     }
   };
 
-  const handleDelete = async (prod) => {
-    const targetId = prod._id || prod.id;
-    if (window.confirm(`Remove "${prod.title}" from MongoDB Atlas?`)) {
+  const handleDelete = (prod) => {
+    setDeletingProduct(prod);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingProduct) return;
+    setSubmitting(true);
+    try {
+      const targetId = deletingProduct._id || deletingProduct.id;
       await deleteProduct(targetId);
+      setDeletingProduct(null);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -162,7 +172,10 @@ export default function ProductsPage() {
                           <img
                             src={p.thumbnail || p.images?.[0] || 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=120'}
                             alt={p.title}
-                            className="w-11 h-11 object-cover rounded-xl border border-slate-200 shrink-0"
+                            onError={(e) => {
+                              e.currentTarget.src = 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=120&auto=format&fit=crop&q=80';
+                            }}
+                            className="w-11 h-11 object-cover rounded-xl border border-slate-200 shrink-0 bg-slate-100"
                           />
                           <div>
                             <div className="font-bold text-slate-900 line-clamp-1">{p.title}</div>
@@ -412,6 +425,42 @@ export default function ProductsPage() {
               </button>
             </div>
           </form>
+        )}
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={!!deletingProduct}
+        onClose={() => setDeletingProduct(null)}
+        title="Confirm Removal"
+        maxWidth="max-w-md"
+      >
+        {deletingProduct && (
+          <div className="space-y-4 text-xs">
+            <p className="text-slate-600 text-sm">
+              Are you sure you want to remove <strong className="text-slate-900 font-semibold">{deletingProduct.title}</strong> from the active MongoDB Atlas catalog?
+            </p>
+            <p className="text-slate-400 text-xs">
+              This action cannot be undone. Product stock and catalog entries will be permanently removed.
+            </p>
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setDeletingProduct(null)}
+                className="btn-secondary py-2 px-4 text-xs"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={submitting}
+                onClick={handleConfirmDelete}
+                className="btn-primary bg-rose-600 hover:bg-rose-700 py-2 px-4 text-xs font-semibold"
+              >
+                {submitting ? 'Removing...' : 'Confirm Delete'}
+              </button>
+            </div>
+          </div>
         )}
       </Modal>
     </div>

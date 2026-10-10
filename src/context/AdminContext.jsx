@@ -199,10 +199,14 @@ export const AdminProvider = ({ children }) => {
   // Orders Actions
   const updateOrderStatus = async (id, status) => {
     try {
-      const res = await orderService.updateOrderStatus(id, status);
+      const payload = typeof status === 'string' ? { status } : status;
+      const res = await orderService.updateOrderStatus(id, payload);
       if (res.success && res.order) {
         setOrders((prev) => prev.map((o) => ((o._id === id || o.id === id) ? res.order : o)));
-        showToast(`Order status updated to "${status.status || status}" ✅`);
+        adminService.getStats().then((sRes) => {
+          if (sRes?.success) setStats(sRes.stats);
+        }).catch(() => {});
+        showToast(`Order status updated to "${payload.status || payload}" ✅`);
         return res.order;
       }
     } catch (err) {
