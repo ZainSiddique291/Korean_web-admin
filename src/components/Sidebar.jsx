@@ -92,7 +92,13 @@ export default function Sidebar({ isOpen, onClose }) {
         <div className="p-4 mx-3 mb-3 bg-slate-800/60 rounded-2xl border border-slate-700/60">
           <div className="text-xs text-slate-400 mb-1">Customer Storefront</div>
           <a
-            href={import.meta.env.VITE_CLIENT_URL || 'http://localhost:5173'}
+            href={
+              import.meta.env.VITE_CLIENT_URL && !import.meta.env.VITE_CLIENT_URL.includes('localhost')
+                ? import.meta.env.VITE_CLIENT_URL
+                : typeof window !== 'undefined' && !['localhost', '127.0.0.1'].includes(window.location.hostname)
+                ? `${window.location.protocol}//${window.location.hostname}:5173`
+                : import.meta.env.VITE_CLIENT_URL || 'http://localhost:5173'
+            }
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-between text-xs font-semibold text-emerald-400 hover:text-emerald-300"

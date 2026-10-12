@@ -41,23 +41,61 @@ const allowedOrigins = [
   process.env.ADMIN_URL,
 ].filter(Boolean);
 
+// Handle Private Network Access (PNA) preflight header for Chromium-based browsers
+app.use((req, res, next) => {
+  if (req.headers['access-control-request-private-network']) {
+    res.setHeader('Access-Control-Allow-Private-Network', 'true');
+  }
+  next();
+});
+
+// Dynamic CORS configuration supporting localhost, private LAN IPs, and production domains
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, curl, postman)
+      // Allow requests with no origin (mobile native apps, curl, postman)
       if (!origin) return callback(null, true);
 
-      // Check against explicit allowed origins or localhost/127.0.0.1 or Vercel preview domains
+      // Check explicit allowed origins list
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      // Allow loopback / localhost on any port
+      if (/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+        return callback(null, true);
+      }
+
+      // Allow local Wi-Fi / private LAN subnets on any port (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
       if (
-        allowedOrigins.includes(origin) ||
-        /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) ||
-        /\.vercel\.app$/.test(origin)
+        /^http:\/\/(192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3})(:\d+)?$/.test(
+          origin
+        )
       ) {
         return callback(null, true);
       }
-      return callback(null, true); // Fallback to avoid blocking valid requests
+
+      // Allow Vercel preview domains
+      if (/\.vercel\.app$/.test(origin)) {
+        return callback(null, true);
+      }
+
+      // In non-production environments, allow origin to facilitate local testing
+      if (process.env.NODE_ENV !== 'production') {
+        return callback(null, true);
+      }
+
+      return callback(new Error(`CORS blocked for origin: ${origin}`));
     },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Requested-With',
+      'x-refresh-token',
+      'Access-Control-Request-Private-Network',
+    ],
   })
 );
 
@@ -104,8 +142,8 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 
 if (!process.env.VERCEL) {
-  const server = app.listen(PORT, () => {
-    console.log(`🌸 SEORA Backend Server Running on port ${PORT}`);
+  const server = app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🌸 SEORA Backend Server Running on port ${PORT} (0.0.0.0)`);
   });
 
   server.on('error', (err) => {

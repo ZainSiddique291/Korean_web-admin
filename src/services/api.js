@@ -1,8 +1,21 @@
 import axios from 'axios';
 
-// Resolve dynamic API URL from environment variable VITE_API_BASE_URL, defaulting to '/api' for local dev proxy
+// Resolve dynamic API URL:
+// 1. In browser when accessed via LAN IP/hostname on other devices:
+//    If VITE_API_BASE_URL is not set or points to localhost, route via '/api' through Vite's dev proxy,
+//    ensuring mobile phones and other devices on Wi-Fi connect seamlessly without Network Errors.
+// 2. In production or when VITE_API_BASE_URL is an explicit public URL (not localhost), use it directly.
 const getBaseURL = () => {
   const envUrl = import.meta.env.VITE_API_BASE_URL;
+
+  // In browser on other devices (non-localhost hostname):
+  if (typeof window !== 'undefined' && window.location) {
+    const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+    if (!isLocalhost && (!envUrl || envUrl.includes('localhost') || envUrl.includes('127.0.0.1'))) {
+      return '/api';
+    }
+  }
+
   if (!envUrl) return '/api';
   const cleaned = envUrl.replace(/\/+$/, '');
   return cleaned.endsWith('/api') ? cleaned : `${cleaned}/api`;
