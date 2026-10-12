@@ -7,9 +7,15 @@ const connectDB = async () => {
     return mongoose.connection;
   }
 
+  const mongoUri = process.env.MONGO_URI || (!process.env.VERCEL ? 'mongodb://127.0.0.1:27017/koreanweb' : null);
+
+  if (!mongoUri) {
+    throw new Error('MONGO_URI environment variable is not defined. Please configure MONGO_URI in your Vercel Project Settings > Environment Variables.');
+  }
+
   try {
-    const conn = await mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/koreanweb', {
-      serverSelectionTimeoutMS: 8000,
+    const conn = await mongoose.connect(mongoUri, {
+      serverSelectionTimeoutMS: 5000,
     });
     isConnected = true;
     console.log(`✅ MongoDB Connected: ${conn.connection.host} / ${conn.connection.name}`);

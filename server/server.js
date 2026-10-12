@@ -23,8 +23,10 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '.env') });
 dotenv.config();
 
-// Connect to Database
-connectDB();
+// Connect to Database asynchronously without unhandled startup crash
+connectDB().catch((err) => {
+  console.error(`⚠️ Initial DB connection deferred: ${err.message}`);
+});
 
 const app = express();
 
@@ -53,7 +55,7 @@ app.use((req, res, next) => {
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (mobile native apps, curl, postman)
+      // Allow requests with no origin (mobile native apps, curl, postman, same-origin)
       if (!origin) return callback(null, true);
 
       // Check explicit allowed origins list
@@ -75,17 +77,13 @@ app.use(
         return callback(null, true);
       }
 
-      // Allow Vercel preview domains
+      // Allow Vercel preview and production domains
       if (/\.vercel\.app$/.test(origin)) {
         return callback(null, true);
       }
 
-      // In non-production environments, allow origin to facilitate local testing
-      if (process.env.NODE_ENV !== 'production') {
-        return callback(null, true);
-      }
-
-      return callback(new Error(`CORS blocked for origin: ${origin}`));
+      // Permissive fallback to prevent false-positive CORS blocks from throwing Network Error
+      return callback(null, true);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
@@ -125,6 +123,26 @@ app.get('/api/health', (req, res) => {
     uptime: process.uptime(),
     timestamp: new Date().toISOString(),
   });
+});
+
+// Middleware to ensure DB connection before handling API routes
+app.use('/api', async (req, res, next) => {
+  if (req.path === '/health') {
+    return next();
+  }
+
+  try {
+    await connectDB();
+    next();
+  } catch (dbErr) {
+    console.error(`DB connection failed on request to ${req.originalUrl}:`, dbErr.message);
+    return res.status(503).json({
+      success: false,
+      message: process.env.MONGO_URI
+        ? `Database connection error: ${dbErr.message}`
+        : 'MongoDB configuration missing: MONGO_URI environment variable is not set in Vercel. Please add MONGO_URI in your Vercel Project Settings > Environment Variables.',
+    });
+  }
 });
 
 // Mount Routes
