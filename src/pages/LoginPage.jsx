@@ -97,13 +97,7 @@ export default function LoginPage() {
 
         <div className="mt-6 pt-5 border-t border-slate-100 text-center">
           <a
-            href={
-              import.meta.env.VITE_CLIENT_URL && !import.meta.env.VITE_CLIENT_URL.includes('localhost')
-                ? import.meta.env.VITE_CLIENT_URL
-                : typeof window !== 'undefined' && !['localhost', '127.0.0.1'].includes(window.location.hostname)
-                ? `${window.location.protocol}//${window.location.hostname}:5173`
-                : import.meta.env.VITE_CLIENT_URL || 'http://localhost:5173'
-            }
+            href="https://koreanweb-iota.vercel.app/"
             target="_blank"
             rel="noopener noreferrer"
             className="text-xs font-medium text-primary-700 hover:text-primary-800 hover:underline"
