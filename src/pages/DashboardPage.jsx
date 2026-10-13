@@ -43,7 +43,7 @@ export default function DashboardPage() {
         <div>
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-800 text-emerald-300 border border-primary-700 text-xs font-semibold mb-2">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            Live Central Database
+            Store Overview
           </span>
           <h2 className="text-2xl sm:text-3xl font-bold font-serif tracking-tight">
             Administrative Overview
@@ -253,7 +253,7 @@ export default function DashboardPage() {
 
             <div className="pt-2">
               <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                Update Order Status (Live Atlas)
+                Update Order Status
               </label>
               <select
                 value={selectedOrder.status}

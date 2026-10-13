@@ -58,10 +58,10 @@ export default function Sidebar({ isOpen, onClose }) {
           <div className="flex items-center justify-between text-xs">
             <span className="flex items-center gap-2 text-slate-300">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span>MongoDB Atlas</span>
+              <span className="font-medium">Store Status</span>
             </span>
             <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-950 text-emerald-300 border border-emerald-800">
-              Live
+              Active
             </span>
           </div>
         </div>

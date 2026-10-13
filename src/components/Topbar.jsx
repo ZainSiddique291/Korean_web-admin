@@ -29,15 +29,15 @@ export default function Topbar({ onToggleSidebar }) {
           onClick={refreshAllData}
           disabled={isSyncing}
           className="btn-secondary py-2 px-3 text-xs flex items-center gap-1.5"
-          title="Sync with MongoDB Atlas"
+          title="Refresh Dashboard Data"
         >
           <RefreshCw className={`w-3.5 h-3.5 text-primary-600 ${isSyncing ? 'animate-spin' : ''}`} />
-          <span className="hidden sm:inline">{isSyncing ? 'Syncing...' : 'Sync Atlas'}</span>
+          <span className="hidden sm:inline">{isSyncing ? 'Refreshing...' : 'Refresh'}</span>
         </button>
 
         <span className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span>Shared DB: ecom</span>
+          <span>System Online</span>
         </span>
 
         <div className="flex items-center gap-2 pl-2 border-l border-slate-200">

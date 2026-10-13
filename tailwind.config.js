@@ -7,8 +7,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Figtree', 'Jost', 'Poppins', 'sans-serif'],
-        serif: ['Playfair Display', 'serif'],
+        sans: ['"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
+        serif: ['"Playfair Display"', 'serif'],
       },
       colors: {
         admin: {

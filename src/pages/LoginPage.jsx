@@ -32,7 +32,7 @@ export default function LoginPage() {
 
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold mb-3">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            MongoDB Atlas Connected (ecom)
+            Authorized Administrator Portal
           </span>
 
           <h2 className="text-2xl sm:text-3xl font-bold font-serif text-slate-900 tracking-tight">

@@ -1,7 +1,56 @@
 import { useState } from 'react';
-import { Plus, Search, Edit3, Trash2, Filter, Star, Package } from 'lucide-react';
+import {
+  Plus,
+  Search,
+  Edit3,
+  Trash2,
+  Filter,
+  Star,
+  Package,
+  UploadCloud,
+  Link as LinkIcon,
+  X,
+  Image as ImageIcon,
+} from 'lucide-react';
 import { useAdmin } from '../context/AdminContext';
 import Modal from '../components/Modal';
+
+// Helper to optimize and convert device images to Data URL
+const processImageFile = (file) => {
+  return new Promise((resolve, reject) => {
+    if (!file) return reject(new Error('No file selected'));
+    if (!file.type.startsWith('image/')) {
+      return reject(new Error('Selected file is not an image'));
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const maxDim = 1200;
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+      };
+      img.onerror = () => resolve(e.target.result);
+      img.src = e.target.result;
+    };
+    reader.onerror = (err) => reject(err);
+    reader.readAsDataURL(file);
+  });
+};
 
 export default function ProductsPage() {
   const { products, addProduct, updateProduct, deleteProduct } = useAdmin();
@@ -14,6 +63,11 @@ export default function ProductsPage() {
   const [editingProduct, setEditingProduct] = useState(null);
   const [deletingProduct, setDeletingProduct] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // Image mode states
+  const [addImageMode, setAddImageMode] = useState('upload'); // 'upload' | 'url'
+  const [editImageMode, setEditImageMode] = useState('url'); // 'upload' | 'url'
+  const [imageProcessing, setImageProcessing] = useState(false);
 
   // Form State
   const [form, setForm] = useState({
@@ -51,8 +105,37 @@ export default function ProductsPage() {
       });
       setIsAddOpen(false);
       setForm({ title: '', category: 'serums', price: '', originalPrice: '', stock: '25', thumbnail: '', description: '' });
+      setAddImageMode('upload');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleAddFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageProcessing(true);
+    try {
+      const dataUrl = await processImageFile(file);
+      setForm((prev) => ({ ...prev, thumbnail: dataUrl }));
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setImageProcessing(false);
+    }
+  };
+
+  const handleEditFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageProcessing(true);
+    try {
+      const dataUrl = await processImageFile(file);
+      setEditingProduct((prev) => (prev ? { ...prev, thumbnail: dataUrl } : null));
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setImageProcessing(false);
     }
   };
 
@@ -205,7 +288,10 @@ export default function ProductsPage() {
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <button
-                            onClick={() => setEditingProduct({ ...p })}
+                            onClick={() => {
+                              setEditingProduct({ ...p });
+                              setEditImageMode(p.thumbnail?.startsWith('data:') ? 'upload' : 'url');
+                            }}
                             className="btn-secondary py-1.5 px-2.5 text-xs"
                             title="Edit Product"
                           >
@@ -295,15 +381,148 @@ export default function ProductsPage() {
             </div>
           </div>
 
-          <div>
-            <label className="block font-semibold text-slate-700 mb-1">Image Thumbnail URL</label>
-            <input
-              type="url"
-              value={form.thumbnail}
-              onChange={(e) => setForm({ ...form, thumbnail: e.target.value })}
-              placeholder="https://images.unsplash.com/..."
-              className="input-field"
-            />
+          {/* Product Image Option: Device Upload or URL */}
+          <div className="pt-1">
+            <label className="block font-semibold text-slate-700 mb-1.5">Product Image *</label>
+
+            {/* Toggle Switcher */}
+            <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl mb-2.5 border border-slate-200/60">
+              <button
+                type="button"
+                onClick={() => setAddImageMode('upload')}
+                className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                  addImageMode === 'upload'
+                    ? 'bg-white text-primary-700 shadow-xs border border-slate-200/50'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <UploadCloud className="w-3.5 h-3.5" />
+                <span>Upload from Device</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setAddImageMode('url')}
+                className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                  addImageMode === 'url'
+                    ? 'bg-white text-primary-700 shadow-xs border border-slate-200/50'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <LinkIcon className="w-3.5 h-3.5" />
+                <span>Image URL</span>
+              </button>
+            </div>
+
+            {/* Device Upload Mode */}
+            {addImageMode === 'upload' && (
+              <div>
+                <input
+                  type="file"
+                  id="add-product-image-file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAddFileChange}
+                />
+                {form.thumbnail && form.thumbnail.startsWith('data:') ? (
+                  <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                    <img
+                      src={form.thumbnail}
+                      alt="Uploaded Preview"
+                      className="w-16 h-16 object-cover rounded-lg border border-slate-200 bg-white shrink-0 shadow-xs"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-semibold text-slate-800">Image Ready</div>
+                      <div className="text-[11px] text-emerald-600 font-medium mt-0.5">
+                        Uploaded from your device
+                      </div>
+                      <div className="flex items-center gap-2 mt-2">
+                        <label
+                          htmlFor="add-product-image-file"
+                          className="cursor-pointer text-xs font-semibold text-primary-700 hover:text-primary-800 hover:underline"
+                        >
+                          Change Image
+                        </label>
+                        <span className="text-slate-300">•</span>
+                        <button
+                          type="button"
+                          onClick={() => setForm({ ...form, thumbnail: '' })}
+                          className="text-xs font-semibold text-rose-600 hover:text-rose-700 hover:underline"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <label
+                    htmlFor="add-product-image-file"
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={async (e) => {
+                      e.preventDefault();
+                      const file = e.dataTransfer.files?.[0];
+                      if (!file) return;
+                      setImageProcessing(true);
+                      try {
+                        const dataUrl = await processImageFile(file);
+                        setForm((prev) => ({ ...prev, thumbnail: dataUrl }));
+                      } catch (err) {
+                        console.error(err);
+                      } finally {
+                        setImageProcessing(false);
+                      }
+                    }}
+                    className="flex flex-col items-center justify-center p-5 border-2 border-dashed border-slate-300 hover:border-primary-500 bg-slate-50/70 hover:bg-primary-50/30 rounded-xl cursor-pointer transition-colors group"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-slate-100 group-hover:bg-primary-100 flex items-center justify-center text-slate-500 group-hover:text-primary-700 mb-2 transition-colors">
+                      <UploadCloud className="w-5 h-5" />
+                    </div>
+                    <span className="text-xs font-semibold text-slate-700 group-hover:text-primary-800">
+                      {imageProcessing ? 'Processing image...' : 'Click to upload from device'}
+                    </span>
+                    <span className="text-[11px] text-slate-400 mt-0.5">
+                      or drag and drop image file (PNG, JPG, WEBP)
+                    </span>
+                  </label>
+                )}
+              </div>
+            )}
+
+            {/* URL Mode */}
+            {addImageMode === 'url' && (
+              <div className="space-y-2">
+                <input
+                  type="url"
+                  value={form.thumbnail.startsWith('data:') ? '' : form.thumbnail}
+                  onChange={(e) => setForm({ ...form, thumbnail: e.target.value })}
+                  placeholder="https://images.unsplash.com/photo-..."
+                  className="input-field"
+                />
+                {form.thumbnail && !form.thumbnail.startsWith('data:') && (
+                  <div className="flex items-center gap-3 p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                    <img
+                      src={form.thumbnail}
+                      alt="URL Preview"
+                      className="w-12 h-12 object-cover rounded-lg border border-slate-200 bg-white shrink-0"
+                      onError={(e) => {
+                        e.currentTarget.src = 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=100';
+                      }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-semibold text-slate-800">URL Preview</div>
+                      <div className="text-[11px] text-slate-400 truncate">{form.thumbnail}</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, thumbnail: '' })}
+                      className="p-1 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-slate-100"
+                      title="Clear image URL"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div>
@@ -327,10 +546,10 @@ export default function ProductsPage() {
             </button>
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || imageProcessing}
               className="btn-primary"
             >
-              {submitting ? 'Saving to Atlas...' : 'Save to Atlas'}
+              {submitting ? 'Saving...' : 'Save Product'}
             </button>
           </div>
         </form>
@@ -387,15 +606,117 @@ export default function ProductsPage() {
                   className="input-field"
                 />
               </div>
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Thumbnail URL</label>
-                <input
-                  type="text"
-                  value={editingProduct.thumbnail || ''}
-                  onChange={(e) => setEditingProduct({ ...editingProduct, thumbnail: e.target.value })}
-                  className="input-field"
-                />
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1.5">Product Image</label>
+
+              {/* Edit Image Switcher */}
+              <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl mb-2.5 border border-slate-200/60">
+                <button
+                  type="button"
+                  onClick={() => setEditImageMode('upload')}
+                  className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                    editImageMode === 'upload'
+                      ? 'bg-white text-primary-700 shadow-xs border border-slate-200/50'
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  <UploadCloud className="w-3.5 h-3.5" />
+                  <span>Upload from Device</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditImageMode('url')}
+                  className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                    editImageMode === 'url'
+                      ? 'bg-white text-primary-700 shadow-xs border border-slate-200/50'
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  <LinkIcon className="w-3.5 h-3.5" />
+                  <span>Image URL</span>
+                </button>
               </div>
+
+              {/* Edit: Upload Mode */}
+              {editImageMode === 'upload' && (
+                <div>
+                  <input
+                    type="file"
+                    id="edit-product-image-file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleEditFileChange}
+                  />
+                  {editingProduct.thumbnail && editingProduct.thumbnail.startsWith('data:') ? (
+                    <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                      <img
+                        src={editingProduct.thumbnail}
+                        alt="Uploaded Preview"
+                        className="w-16 h-16 object-cover rounded-lg border border-slate-200 bg-white shrink-0 shadow-xs"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-semibold text-slate-800">New Image Loaded</div>
+                        <div className="text-[11px] text-emerald-600 font-medium mt-0.5">Ready to save</div>
+                        <div className="flex items-center gap-2 mt-2">
+                          <label
+                            htmlFor="edit-product-image-file"
+                            className="cursor-pointer text-xs font-semibold text-primary-700 hover:text-primary-800 hover:underline"
+                          >
+                            Change Image
+                          </label>
+                          <span className="text-slate-300">•</span>
+                          <button
+                            type="button"
+                            onClick={() => setEditingProduct({ ...editingProduct, thumbnail: '' })}
+                            className="text-xs font-semibold text-rose-600 hover:text-rose-700 hover:underline"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <label
+                      htmlFor="edit-product-image-file"
+                      className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-slate-300 hover:border-primary-500 bg-slate-50/70 hover:bg-primary-50/30 rounded-xl cursor-pointer transition-colors group"
+                    >
+                      <UploadCloud className="w-5 h-5 text-slate-400 group-hover:text-primary-700 mb-1" />
+                      <span className="text-xs font-semibold text-slate-700 group-hover:text-primary-800">
+                        {imageProcessing ? 'Processing image...' : 'Click to select new image from device'}
+                      </span>
+                    </label>
+                  )}
+                </div>
+              )}
+
+              {/* Edit: URL Mode */}
+              {editImageMode === 'url' && (
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    value={editingProduct.thumbnail?.startsWith('data:') ? '' : editingProduct.thumbnail || ''}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, thumbnail: e.target.value })}
+                    placeholder="https://images.unsplash.com/photo-..."
+                    className="input-field"
+                  />
+                  {editingProduct.thumbnail && !editingProduct.thumbnail.startsWith('data:') && (
+                    <div className="flex items-center gap-3 p-2 bg-slate-50 rounded-xl border border-slate-200">
+                      <img
+                        src={editingProduct.thumbnail}
+                        alt="Preview"
+                        className="w-10 h-10 object-cover rounded-lg border border-slate-200 bg-white shrink-0"
+                        onError={(e) => {
+                          e.currentTarget.src = 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=100';
+                        }}
+                      />
+                      <span className="text-[11px] text-slate-500 truncate flex-1">
+                        {editingProduct.thumbnail}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
             </div>
 
             <div>
@@ -438,7 +759,7 @@ export default function ProductsPage() {
         {deletingProduct && (
           <div className="space-y-4 text-xs">
             <p className="text-slate-600 text-sm">
-              Are you sure you want to remove <strong className="text-slate-900 font-semibold">{deletingProduct.title}</strong> from the active MongoDB Atlas catalog?
+              Are you sure you want to remove <strong className="text-slate-900 font-semibold">{deletingProduct.title}</strong> from the product catalog?
             </p>
             <p className="text-slate-400 text-xs">
               This action cannot be undone. Product stock and catalog entries will be permanently removed.

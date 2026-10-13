@@ -104,9 +104,9 @@ export const AdminProvider = ({ children }) => {
       if (customersRes.status === 'fulfilled' && customersRes.value?.success) {
         setCustomers(customersRes.value.customers || []);
       }
-      showToast('Admin dashboard synced with live MongoDB Atlas ⚡');
+      showToast('Dashboard data updated successfully');
     } catch {
-      showToast('Failed to sync with MongoDB Atlas');
+      showToast('Failed to refresh data');
     } finally {
       setIsSyncing(false);
     }
@@ -130,7 +130,7 @@ export const AdminProvider = ({ children }) => {
           throw new Error('Access denied. Administrator privileges required.');
         }
         setAdminUser(res.user);
-        showToast(`Welcome back, ${res.user.name}! Connected to Atlas ✅`);
+        showToast(`Welcome back, ${res.user.name}!`);
         return res.user;
       }
     } catch (err) {
@@ -161,7 +161,7 @@ export const AdminProvider = ({ children }) => {
       if (res.success && res.product) {
         setProducts((prev) => [res.product, ...prev]);
         setStats((prev) => prev ? { ...prev, totalProducts: (prev.totalProducts || 0) + 1 } : null);
-        showToast('Product successfully saved to MongoDB Atlas! ✅');
+        showToast('Product created successfully! ✅');
         return res.product;
       }
     } catch (err) {
@@ -175,7 +175,7 @@ export const AdminProvider = ({ children }) => {
       const res = await productService.updateProduct(id, fields);
       if (res.success && res.product) {
         setProducts((prev) => prev.map((p) => ((p._id === id || p.id === id) ? res.product : p)));
-        showToast('Product updated in MongoDB Atlas! ✅');
+        showToast('Product updated successfully! ✅');
         return res.product;
       }
     } catch (err) {
@@ -189,7 +189,7 @@ export const AdminProvider = ({ children }) => {
       await productService.deleteProduct(id);
       setProducts((prev) => prev.filter((p) => p._id !== id && p.id !== id));
       setStats((prev) => prev ? { ...prev, totalProducts: Math.max(0, (prev.totalProducts || 0) - 1) } : null);
-      showToast('Product deleted from MongoDB Atlas');
+      showToast('Product removed successfully');
     } catch (err) {
       showToast(err.response?.data?.message || 'Failed to delete product');
       throw err;
