@@ -1,11 +1,12 @@
-import { Menu, RefreshCw } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Menu, RefreshCw, Settings } from 'lucide-react';
 import { useAdmin } from '../context/AdminContext';
 
 export default function Topbar({ onToggleSidebar }) {
   const { adminUser, isSyncing, refreshAllData } = useAdmin();
 
   return (
-    <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 py-3 flex items-center justify-between">
+    <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
       <div className="flex items-center gap-3">
         <button
           onClick={onToggleSidebar}
@@ -40,14 +41,26 @@ export default function Topbar({ onToggleSidebar }) {
           <span>System Online</span>
         </span>
 
-        <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
-          <div className="w-8 h-8 rounded-full bg-primary-100 text-primary-800 font-bold text-xs flex items-center justify-center border border-primary-200">
-            {adminUser?.name?.charAt(0) || 'A'}
-          </div>
+        <Link
+          to="/settings"
+          className="flex items-center gap-2 pl-2 sm:pl-3 border-l border-slate-200 hover:opacity-85 transition-opacity"
+          title="Profile & Settings"
+        >
+          {adminUser?.avatar ? (
+            <img
+              src={adminUser.avatar}
+              alt={adminUser.name}
+              className="w-8 h-8 rounded-full object-cover border border-primary-200"
+            />
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-primary-100 text-primary-800 font-bold text-xs flex items-center justify-center border border-primary-200">
+              {adminUser?.name?.charAt(0) || 'A'}
+            </div>
+          )}
           <span className="text-xs font-semibold text-slate-700 hidden lg:inline">
             {adminUser?.name || 'Admin'}
           </span>
-        </div>
+        </Link>
       </div>
     </header>
   );

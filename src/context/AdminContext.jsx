@@ -154,6 +154,21 @@ export const AdminProvider = ({ children }) => {
     showToast('Logged out of Admin Portal');
   };
 
+  const updateAdminProfile = async (profileData) => {
+    try {
+      const res = await authService.updateProfile(profileData);
+      if (res.success && res.user) {
+        setAdminUser(res.user);
+        showToast('Profile updated successfully! ✅');
+        return res.user;
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Failed to update profile';
+      showToast(msg);
+      throw err;
+    }
+  };
+
   // Products CRUD
   const addProduct = async (productData) => {
     try {
@@ -232,6 +247,7 @@ export const AdminProvider = ({ children }) => {
     updateProduct,
     deleteProduct,
     updateOrderStatus,
+    updateAdminProfile,
     showToast,
     hideToast,
   };

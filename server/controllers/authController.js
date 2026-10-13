@@ -194,9 +194,22 @@ export const getMe = async (req, res) => {
 // @access  Private (Protected by Access Token)
 export const updateUserProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(req.user._id).select('+password');
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    if (req.body.password) {
+      if (req.body.currentPassword) {
+        const isMatch = await user.matchPassword(req.body.currentPassword);
+        if (!isMatch) {
+          return res.status(400).json({ success: false, message: 'Current password is incorrect' });
+        }
+      }
+      if (req.body.password.length < 6) {
+        return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
+      }
+      user.password = req.body.password;
     }
 
     user.name = req.body.name || user.name;
@@ -204,10 +217,6 @@ export const updateUserProfile = async (req, res) => {
     user.address = req.body.address !== undefined ? req.body.address : user.address;
     user.city = req.body.city !== undefined ? req.body.city : user.city;
     user.avatar = req.body.avatar !== undefined ? req.body.avatar : user.avatar;
-
-    if (req.body.password) {
-      user.password = req.body.password;
-    }
 
     const updatedUser = await user.save();
 

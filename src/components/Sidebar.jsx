@@ -1,9 +1,10 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, Link } from 'react-router-dom';
 import {
   LayoutDashboard,
   Package,
   ShoppingBag,
   Users,
+  Settings,
   LogOut,
   ExternalLink,
   X,
@@ -18,6 +19,7 @@ export default function Sidebar({ isOpen, onClose }) {
     { label: 'Products', path: '/products', icon: Package },
     { label: 'Orders', path: '/orders', icon: ShoppingBag },
     { label: 'Customers', path: '/customers', icon: Users },
+    { label: 'Profile Settings', path: '/settings', icon: Settings },
   ];
 
   return (
@@ -109,15 +111,30 @@ export default function Sidebar({ isOpen, onClose }) {
         </div>
 
         <div className="p-4 border-t border-slate-800/80 bg-slate-950/40 flex items-center justify-between">
-          <div className="flex items-center gap-3 overflow-hidden">
-            <div className="w-9 h-9 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-slate-300 shrink-0">
-              {adminUser?.name?.charAt(0) || 'A'}
-            </div>
+          <Link
+            to="/settings"
+            onClick={onClose}
+            className="flex items-center gap-3 overflow-hidden group flex-1 hover:opacity-90 transition-opacity"
+            title="Manage Profile Settings"
+          >
+            {adminUser?.avatar ? (
+              <img
+                src={adminUser.avatar}
+                alt={adminUser.name}
+                className="w-9 h-9 rounded-xl object-cover border border-slate-700 bg-slate-800 shrink-0"
+              />
+            ) : (
+              <div className="w-9 h-9 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-slate-300 shrink-0 group-hover:border-primary-500 transition-colors">
+                {adminUser?.name?.charAt(0) || 'A'}
+              </div>
+            )}
             <div className="truncate">
-              <div className="text-xs font-semibold text-white truncate">{adminUser?.name || 'Administrator'}</div>
+              <div className="text-xs font-semibold text-white truncate group-hover:text-emerald-400 transition-colors">
+                {adminUser?.name || 'Administrator'}
+              </div>
               <div className="text-[10px] text-slate-400 truncate">{adminUser?.email || 'admin@store.com'}</div>
             </div>
-          </div>
+          </Link>
           <button
             onClick={logout}
             title="Sign out of Admin"

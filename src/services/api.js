@@ -160,6 +160,14 @@ export const authService = {
     const res = await api.get('/auth/me');
     return res.data;
   },
+
+  updateProfile: async (profileData) => {
+    const res = await api.put('/auth/profile', profileData);
+    if (res.data.success && res.data.user) {
+      localStorage.setItem(TOKEN_KEYS.USER, JSON.stringify(res.data.user));
+    }
+    return res.data;
+  },
 };
 
 export const productService = {
